@@ -181,8 +181,26 @@ void MemoryAccess::createUser(User& user)
 
 void MemoryAccess::deleteUser(const User& user)
 {
+	std::list<Album> toDelete;
+
 	if (doesUserExists(user.getId())) {
-	
+		
+		for (auto it = m_albums.begin(); it != m_albums.end(); it++)
+		{
+			if (it->getOwnerId() == user.getId())
+			{
+				toDelete.push_back(*it);
+			}
+		}
+
+		int toDeleteSize = toDelete.size();
+		for (int i = 0; i < toDeleteSize; i++)
+		{
+			Album a = toDelete.front();
+			toDelete.pop_front();
+			deleteAlbum(a.getName(), a.getOwnerId());
+		}
+
 		for (auto iter = m_users.begin(); iter != m_users.end(); ++iter) {
 			if (*iter == user) {
 				iter = m_users.erase(iter);
@@ -265,6 +283,7 @@ float MemoryAccess::averageTagsPerAlbumOfUser(const User& user)
 	return static_cast<float>(countTagsOfUser(user)) / albumsTaggedCount;
 }
 
+// queries
 User MemoryAccess::getTopTaggedUser()
 {
 	std::map<int, int> userTagsCountMap;
