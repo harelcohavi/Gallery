@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <ctime>
 #include "MemoryAccess.h"
 #include "AlbumManager.h"
 
@@ -38,7 +39,14 @@ int main(void)
 
 
 	std::string albumName;
+
+	std::time_t t = std::time(0);   // get time now
+	std::tm* now = std::localtime(&t);
+
 	std::cout << "Welcome to Gallery!" << std::endl;
+	std::cout << "My name is harel cohavi" << std::endl;
+	std::cout << "===================" << std::endl;
+	std::cout << "Now is " << now->tm_hour << ":" << now->tm_min << std::endl;
 	std::cout << "===================" << std::endl;
 	std::cout << "Type " << HELP << " to a list of all supported commands" << std::endl;
 	
