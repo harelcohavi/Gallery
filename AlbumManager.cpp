@@ -5,8 +5,8 @@
 #include "AlbumNotOpenException.h"
 
 
-AlbumManager::AlbumManager(IDataAccess& dataAccess) :
-    m_dataAccess(dataAccess), m_nextPictureId(100), m_nextUserId(200)
+AlbumManager::AlbumManager(MyDatabaseAccess& dataAccess) :
+	m_dataAccess(dataAccess), m_nextPictureId(100), m_nextUserId(200)
 {
 	// Left empty
 	m_dataAccess.open();
@@ -154,7 +154,14 @@ void AlbumManager::addPictureToAlbum()
 	std::string picPath = getInputFromConsole("Enter picture path: ");
 	picture.setPath(picPath);
 
-	m_dataAccess.addPictureToAlbumByName(m_openAlbum.getName(), picture);
+	try
+	{
+		m_dataAccess.addPictureToAlbumByName(m_openAlbum.getName(), picture);
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+	}
 
 	std::cout << "Picture [" << picture.getId() << "] successfully added to Album [" << m_openAlbum.getName() << "]." << std::endl;
 }
@@ -290,9 +297,16 @@ void AlbumManager::addUser()
 	std::string name = getInputFromConsole("Enter user name: ");
 
 	User user(++m_nextUserId,name);
-	
-	m_dataAccess.createUser(user);
-	std::cout << "User " << name << " with id @" << user.getId() << " created successfully." << std::endl;
+
+	try
+	{
+		m_dataAccess.createUser(user);
+		std::cout << "User " << name << " with id @" << user.getId() << " created successfully." << std::endl;
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+	}
 }
 
 

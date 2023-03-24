@@ -4,7 +4,7 @@
 #include "User.h"
 #include "IDataAccess.h"
 
-class MemoryAccess : public IDataAccess
+class MemoryAccess : public DatabaseAccess
 {
 
 public:

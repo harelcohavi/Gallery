@@ -3,6 +3,7 @@
 #include <ctime>
 #include "MemoryAccess.h"
 #include "AlbumManager.h"
+#include "DatabaseAccess.h"
 
 void openingScreen();
 
@@ -33,7 +34,7 @@ int getCommandNumberFromUser()
 int main(void)
 {
 	// initialization data access
-	MemoryAccess dataAccess;
+	MyDatabaseAccess dataAccess;
 
 	// initialize album manager
 	AlbumManager albumManager(dataAccess);
@@ -62,8 +63,28 @@ void openingScreen()
 {
 	std::time_t t = std::time(0);   // get time now
 	std::tm* now = std::localtime(&t);
+	std::string hour;
+	std::string min;
+
+	if (now->tm_hour < 10)
+	{
+		hour = "0" + std::to_string(now->tm_hour);
+	}
+	else
+	{
+		hour = std::to_string(now->tm_hour);
+	}
+
+	if (now->tm_min < 10)
+	{
+		min = "0" + std::to_string(now->tm_min);
+	}
+	else
+	{
+		min = std::to_string(now->tm_min);
+	}
 
 	std::cout << "My name is harel cohavi" << std::endl;
 	std::cout << "===================" << std::endl;
-	std::cout << "Now is " << now->tm_hour << ":" << now->tm_min << std::endl;
+	std::cout << "Now is " << hour << ":" << min << std::endl;
 }

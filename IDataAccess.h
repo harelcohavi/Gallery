@@ -3,10 +3,10 @@
 #include "Album.h"
 #include "User.h"
 
-class IDataAccess
+class DatabaseAccess
 {
 public:
-	virtual ~IDataAccess() = default;
+	virtual ~DatabaseAccess() = default;
 
 	// album related
 	virtual const std::list<Album> getAlbums() = 0;
