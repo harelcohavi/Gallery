@@ -1,9 +1,16 @@
 ﻿#include "AlbumManager.h"
 #include <iostream>
+#include <Windows.h>
+#include <process.h>
+#include <Tlhelp32.h>
 #include "Constants.h"
 #include "MyException.h"
 #include "AlbumNotOpenException.h"
 
+enum APPS {
+	Paint = 1,
+	Intra_view
+};
 
 AlbumManager::AlbumManager(MyDatabaseAccess& dataAccess) :
 	m_dataAccess(dataAccess), m_nextPictureId(100), m_nextUserId(200)
@@ -210,10 +217,20 @@ void AlbumManager::showPicture()
 		throw MyException("Error: Can't open <" + picName+ "> since it doesnt exist on disk.\n");
 	}
 
-	// Bad practice!!!
-	// Can lead to privileges escalation
-	// You will replace it on WinApi Lab(bonus)
-	system(pic.getPath().c_str()); 
+	int app = 0;
+	std::cout << "1 - Paint" << std::endl;
+	std::cout << "2 - Intra view" << std::endl;
+	std::string appStr = getInputFromConsole("Enter the app you want: ");
+	app = std::stoi(appStr);
+	if (app >= 1 && app <= 2)
+	{
+		openPaint(pic.getPath(), APPS(app));
+	}
+	else
+	{
+		throw MyException("Error: your number isnt int the options");
+	}
+
 }
 
 void AlbumManager::tagUserInPicture()
@@ -290,6 +307,67 @@ void AlbumManager::listUserTags()
 
 }
 
+void openPaint(std::string path, enum APPS app)
+{
+	std::string appPath;
+	std::string picPath;
+	std::string win;
+
+	switch (app)
+	{
+	case Paint:
+		appPath = "mspaint.exe";
+		picPath = "\"" + path + "\"";
+		win = "Untitled - Paint";
+		break;
+	case Intra_view:
+		appPath = "rundll32.exe";
+		picPath = "\"C:\\Program Files\\Windows Photo Viewer\\PhotoViewer.dll\", ImageView_Fullscreen " + path;
+		win = "Windows Photo Viewer";
+		break;
+	default:
+		break;
+	}
+
+	// Open Paint and load the picture
+	ShellExecute(NULL, "open", appPath.c_str(), picPath.c_str(), NULL, SW_SHOWDEFAULT);
+
+	// Wait for the user to press Ctrl+C to close the Paint window
+	HWND window = FindWindow(NULL, win.c_str());
+	BOOL success = RegisterHotKey(NULL, 1, MOD_CONTROL, 0x43);
+
+	MSG msg = { 0 };
+	if (GetMessage(&msg, NULL, 0, 0) != 0) {
+		
+		killProcessByName(appPath.c_str());
+	}
+
+	// Unregister the hotkey before exiting
+	UnregisterHotKey(NULL, 1);
+}
+
+void killProcessByName(const char* filename)
+{
+	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
+	PROCESSENTRY32 pEntry;
+	pEntry.dwSize = sizeof(pEntry);
+	BOOL hRes = Process32First(hSnapShot, &pEntry);
+	while (hRes)
+	{
+		if (strcmp(pEntry.szExeFile, filename) == 0)
+		{
+			HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0,
+				(DWORD)pEntry.th32ProcessID);
+			if (hProcess != NULL)
+			{
+				TerminateProcess(hProcess, 9);
+				CloseHandle(hProcess);
+			}
+		}
+		hRes = Process32Next(hSnapShot, &pEntry);
+	}
+	CloseHandle(hSnapShot);
+}
 
 // ******************* User ******************* 
 void AlbumManager::addUser()

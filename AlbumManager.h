@@ -59,8 +59,13 @@ private:
 	void refreshOpenAlbum();
     bool isCurrentAlbumSet() const;
 
+	friend void openPaint(std::string path, enum APPS app);
+	friend void killProcessByName(const char* filename);
+
 	static const std::vector<struct CommandGroup> m_prompts;
 	static const std::map<CommandType, handler_func_t> m_commands;
+
+	static const enum APP;
 
 };
 

@@ -1,2 +1,8 @@
-﻿  Gallery.cpp
+﻿  AlbumManager.cpp
+C:\Users\magshimim\Desktop\magshimim\secondYear\second semester\Advanced Programming\Gallery\AlbumManager.h(68): warning C4091: 'static ': ignored on left of 'const AlbumManager::APP' when no variable is declared
+C:\Users\magshimim\Desktop\magshimim\secondYear\second semester\Advanced Programming\Gallery\AlbumManager.cpp(336,7): warning C4189: 'window': local variable is initialized but not referenced
+C:\Users\magshimim\Desktop\magshimim\secondYear\second semester\Advanced Programming\Gallery\AlbumManager.cpp(337,7): warning C4189: 'success': local variable is initialized but not referenced
+  Gallery.cpp
+C:\Users\magshimim\Desktop\magshimim\secondYear\second semester\Advanced Programming\Gallery\AlbumManager.h(68): warning C4091: 'static ': ignored on left of 'const AlbumManager::APP' when no variable is declared
+  Generating Code...
   Gallery.vcxproj -> C:\Users\magshimim\Desktop\magshimim\secondYear\second semester\Advanced Programming\Gallery\Debug\Gallery.exe
