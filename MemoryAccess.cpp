@@ -26,7 +26,7 @@ bool MemoryAccess::open()
 		std::stringstream name("User_"+std::to_string(i));
 
 		User user(i, name.str());
-		createUser(user);
+		createUser(name.str());
 
 		m_albums.push_back(createDummyAlbum(user));
 	}
@@ -174,9 +174,9 @@ User MemoryAccess::getUser(int userId) {
 	throw ItemNotFoundException("User", userId);
 }
 
-void MemoryAccess::createUser(User& user)
+void MemoryAccess::createUser(std::string userName)
 {
-	m_users.push_back(user);
+	m_users.push_back(getUser(getUserId(userName)));
 }
 
 void MemoryAccess::deleteUser(const User& user)

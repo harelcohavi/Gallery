@@ -18,7 +18,6 @@ public:
 
 private:
     int m_nextPictureId{};
-    int m_nextUserId{};
     std::string m_currentAlbumName{};
 	MyDatabaseAccess& m_dataAccess;
 	Album m_openAlbum;
@@ -59,7 +58,7 @@ private:
 	void refreshOpenAlbum();
     bool isCurrentAlbumSet() const;
 
-	friend void openPaint(std::string path, enum APPS app);
+	friend void openPictureInApp(std::string path, enum APPS app);
 	friend void killProcessByName(const char* filename);
 
 	static const std::vector<struct CommandGroup> m_prompts;

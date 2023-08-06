@@ -23,14 +23,15 @@ public:
 	virtual void removePictureFromAlbumByName(const std::string& albumName, const std::string& pictureName) = 0;
 	virtual void tagUserInPicture(const std::string& albumName, const std::string& pictureName, int userId) = 0;
 	virtual void untagUserInPicture(const std::string& albumName, const std::string& pictureName, int userId) = 0;
+	virtual int countTags(int pictureId) = 0;
 
 	// user related
 	virtual void printUsers() =0;
 	virtual User getUser(int userId) = 0;
-	virtual void createUser(User& user ) = 0;
+	virtual void createUser(std::string userName) = 0;
 	virtual void deleteUser(const User& user) = 0;
 	virtual bool doesUserExists(int userId) = 0 ;
-	
+	virtual int getUserId(std::string userName) = 0;
 
 	// user statistics
 	virtual int countAlbumsOwnedOfUser(const User& user) = 0;

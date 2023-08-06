@@ -25,14 +25,15 @@ public:
 	void removePictureFromAlbumByName(const std::string& albumName, const std::string& pictureName) override;
 	void tagUserInPicture(const std::string& albumName, const std::string& pictureName, int userId) override;
 	void untagUserInPicture(const std::string& albumName, const std::string& pictureName, int userId) override;
+	int countTags(int pictureId) override;
 
 	// user related
 	void printUsers() override;
 	User getUser(int userId) override;
-	void createUser(User& user) override;
+	void createUser(std::string userName) override;
 	void deleteUser(const User& user) override;
 	bool doesUserExists(int userId) override;
-
+	int getUserId(std::string userName) override;
 
 	// user statistics
 	int countAlbumsOwnedOfUser(const User& user) override;
@@ -60,7 +61,9 @@ private:
 	friend int pictureCallback(void* data, int argc, char** argv, char** azColName);
 	std::list<Picture> getPicturesOfAlbum(const std::string& albumName);
 
+	//call bake
 	friend int printCallback(void* data, int argc, char** argv, char** azColName);
+	friend int tagCallback(void* data, int argc, char** argv, char** azColName);
 	friend int idCallback(void* data, int argc, char** argv, char** azColName);
 	friend int counterCallback(void* data, int argc, char** argv, char** azColName);
 	friend int countCallback(void* count, int argc, char** argv, char** azColName);
@@ -69,6 +72,7 @@ private:
 	static std::list<User> _tempUser;
 	static std::list<Picture> _tempPictures;
 	static std::list<int> id;
+	static std::set<int> _idSet;
 	static int counter;
 
 	sqlite3* _db;

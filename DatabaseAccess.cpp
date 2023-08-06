@@ -11,6 +11,7 @@ std::list<Album> MyDatabaseAccess::_tempAlbums;
 std::list<User> MyDatabaseAccess::_tempUser;
 std::list<Picture> MyDatabaseAccess::_tempPictures;
 std::list<int> MyDatabaseAccess::id;
+std::set<int> MyDatabaseAccess::_idSet;
 int MyDatabaseAccess::counter = 0;
 
 MyDatabaseAccess::MyDatabaseAccess()
@@ -203,7 +204,7 @@ Album MyDatabaseAccess::openAlbum(const std::string& albumName)
 
 	a = this->_tempAlbums.front();
 
-	std::list<Picture> pictures = getPicturesOfAlbum(a.getName());
+	std::list<Picture> pictures = getPicturesOfAlbum(albumName);
 
 	for (auto it = pictures.begin(); it != pictures.end(); it++)
 	{
@@ -246,6 +247,7 @@ int MyDatabaseAccess::getAlbumId(std::string albumName)
 	Album album;
 
 	this->_tempAlbums.clear();
+	id.clear();
 
 	sqlStatement = "SELECT * FROM ALBUMS WHERE NAME=\"" + albumName + "\";";
 
@@ -384,7 +386,7 @@ void MyDatabaseAccess::tagUserInPicture(const std::string& albumName, const std:
 	}
 
 
-	sqlStatement = "INSERT INTO TAGS (PICTURE_ID, USER_ID) VALUES(" + std::to_string(id.front()) + "," + std::to_string(userId) + ");";
+	sqlStatement = "INSERT INTO TAGS (PICTURE_ID, USER_ID) VALUES (" + std::to_string(id.front()) + "," + std::to_string(userId) + ");";
 	errMessage = nullptr;
 
 	res = sqlite3_exec(_db, sqlStatement.c_str(), nullptr, nullptr, &errMessage);
@@ -394,6 +396,8 @@ void MyDatabaseAccess::tagUserInPicture(const std::string& albumName, const std:
 		if (errMessage)
 		{
 			std::cout << errMessage << std::endl;
+			errMessage = nullptr;
+			throw errMessage;
 		}
 	}
 }
@@ -418,7 +422,7 @@ void MyDatabaseAccess::untagUserInPicture(const std::string& albumName, const st
 	}
 
 
-	sqlStatement = "DELETE FROM TAGS WHERE PICTURE_ID = " + std::to_string(id.front()) + "AND USER_ID =" + std::to_string(userId) + ";";
+	sqlStatement = "DELETE FROM TAGS WHERE PICTURE_ID = " + std::to_string(id.front()) + " AND USER_ID =" + std::to_string(userId) + ";";
 	errMessage = nullptr;
 
 	res = sqlite3_exec(_db, sqlStatement.c_str(), nullptr, nullptr, &errMessage);
@@ -438,6 +442,7 @@ std::list<Picture> MyDatabaseAccess::getPicturesOfAlbum(const std::string& album
 	int i = 0;
 
 	this->_tempPictures.clear();
+
 	sqlStatement = "SELECT * FROM PICTURES WHERE ALBUM_ID=" + std::to_string(getAlbumId(albumName)) + ";";
 
 	res = sqlite3_exec(this->_db, sqlStatement.c_str(), pictureCallback, nullptr, &errMessage);
@@ -450,12 +455,56 @@ std::list<Picture> MyDatabaseAccess::getPicturesOfAlbum(const std::string& album
 		}
 	}
 
+	for (auto it = this->_tempPictures.begin(); it != this->_tempPictures.end(); it++)
+	{
+		sqlStatement = "SELECT * FROM TAGS WHERE PICTURE_ID=" + std::to_string(it->getId()) + ";";
+		
+		this->_idSet.clear();
+		
+		res = sqlite3_exec(this->_db, sqlStatement.c_str(), tagCallback, nullptr, &errMessage);
+		if (res != SQLITE_OK)
+		{
+			std::cout << "Failed counting tags" << std::endl;
+			if (errMessage)
+			{
+				throw std::invalid_argument(errMessage);
+			}
+		}
+
+		for (auto it2 = this->_idSet.begin(); it2 != this->_idSet.end(); it2++)
+		{
+			it->tagUser(*it2);
+		}
+	}
+
 	return this->_tempPictures;
+}
+int MyDatabaseAccess::countTags(int pictureId)
+{
+	std::string sqlStatement = "";
+	char* errMessage = nullptr;
+	int res = 0;
+	int i = 0;
+
+	id.clear();
+
+	sqlStatement = "SELECT COUNT(*) FROM TAGS WHERE PICTURE_ID =" + std::to_string(pictureId) + ";";
+	res = sqlite3_exec(_db, sqlStatement.c_str(), idCallback, nullptr, &errMessage);
+	if (res != SQLITE_OK)
+	{
+		if (errMessage)
+		{
+			throw errMessage;
+		}
+	}
+
+	return this->id.front();
 }
 
 int pictureCallback(void* data, int argc, char** argv, char** azColName)
 {
 	Picture pic(1, "");
+
 
 	if (argc >= 4)
 	{
@@ -467,6 +516,22 @@ int pictureCallback(void* data, int argc, char** argv, char** azColName)
 		MyDatabaseAccess::_tempPictures.push_back(pic);
 	}
 
+	return 0;
+}
+int tagCallback(void* data, int argc, char** argv, char** azColName)
+{
+	int i = 0;
+
+	if (argc >= 2)
+	{
+		for (i = 0; i < argc; i++)
+		{
+			if (!strcmp(azColName[i], "USER_ID"))
+			{
+				MyDatabaseAccess::_idSet.insert(std::stoi(argv[i]));
+			}
+		}
+	}
 	return 0;
 }
 
@@ -512,15 +577,14 @@ User MyDatabaseAccess::getUser(int userId)
 
 	return this->_tempUser.front();
 }
-void MyDatabaseAccess::createUser(User& user)
+void MyDatabaseAccess::createUser(std::string userName)
 {
 	std::string sqlStatement = "";
 	char* errMessage = nullptr;
 	int res = 0;
 	int i = 0;
 
-	sqlStatement = "INSERT INTO USERS (ID, NAME) VALUES (" + std::to_string(user.getId()) + ",'" + user.getName() + "');";
-	std::cout << sqlStatement << std::endl;
+	sqlStatement = "INSERT INTO USERS (NAME) VALUES ('" + userName + "');";
 
 	res = sqlite3_exec(this->_db, sqlStatement.c_str(), nullptr, nullptr, &errMessage);
 	if (res != SQLITE_OK)
@@ -590,6 +654,28 @@ bool MyDatabaseAccess::doesUserExists(int userId)
 	}
 
 	return this->_tempUser.size() >= 1;
+}
+int MyDatabaseAccess::getUserId(std::string userName)
+{
+	std::string sqlStatement = "";
+	char* errMessage = nullptr;
+	int res = 0;
+	int i = 0;
+
+	this->_tempUser.clear();
+
+	sqlStatement = "SELECT * FROM USERS WHERE NAME='" + userName + "';";
+
+	res = sqlite3_exec(_db, sqlStatement.c_str(), userCallback, nullptr, &errMessage);
+	if (res != SQLITE_OK)
+	{
+		if (errMessage)
+		{
+			throw std::invalid_argument(errMessage);
+		}
+	}
+
+	return this->_tempUser.back().getId();
 }
 
 int userCallback(void* data, int argc, char** argv, char** azColName)
@@ -796,13 +882,35 @@ std::list<Picture> MyDatabaseAccess::getTaggedPicturesOfUser(const User& user)
 	{
 		sqlStatement = "SELECT * FROM PICTURES WHERE ID =" + std::to_string(*it) + ";";
 
-		res = sqlite3_exec(_db, sqlStatement.c_str(), idCallback, nullptr, &errMessage);
+		res = sqlite3_exec(_db, sqlStatement.c_str(), pictureCallback, nullptr, &errMessage);
 		if (res != SQLITE_OK)
 		{
 			if (errMessage)
 			{
 				throw std::invalid_argument(errMessage);
 			}
+		}
+	}
+
+	for (auto it = this->_tempPictures.begin(); it != this->_tempPictures.end(); it++)
+	{
+		sqlStatement = "SELECT * FROM TAGS WHERE PICTURE_ID=" + std::to_string(it->getId()) + ";";
+
+		this->_idSet.clear();
+
+		res = sqlite3_exec(this->_db, sqlStatement.c_str(), tagCallback, nullptr, &errMessage);
+		if (res != SQLITE_OK)
+		{
+			std::cout << "Failed counting tags" << std::endl;
+			if (errMessage)
+			{
+				throw std::invalid_argument(errMessage);
+			}
+		}
+
+		for (auto it2 = this->_idSet.begin(); it2 != this->_idSet.end(); it2++)
+		{
+			it->tagUser(*it2);
 		}
 	}
 
@@ -941,7 +1049,7 @@ int idCallback(void* data, int argc, char** argv, char** azColName)
 
 	for (i = 0; i < argc; i++)
 	{
-		if (!strcmp(azColName[i],"ID") || !strcmp(azColName[i], "USER_ID") || !strcmp(azColName[i], "PICTURE_ID") || !strcmp(azColName[i], "ALBUM_ID"))
+		if (!strcmp(azColName[i],"ID") || !strcmp(azColName[i], "USER_ID") || !strcmp(azColName[i], "PICTURE_ID") || !strcmp(azColName[i], "ALBUM_ID") || !strcmp(azColName[i], "COUNT(*)"))
 		{
 			MyDatabaseAccess::id.push_back(std::stoi(argv[i]));
 		}

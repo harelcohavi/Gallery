@@ -1,6 +1,7 @@
 ﻿#include "AlbumManager.h"
 #include <iostream>
 #include <Windows.h>
+#include <Winuser.h>
 #include <process.h>
 #include <Tlhelp32.h>
 #include "Constants.h"
@@ -13,7 +14,7 @@ enum APPS {
 };
 
 AlbumManager::AlbumManager(MyDatabaseAccess& dataAccess) :
-	m_dataAccess(dataAccess), m_nextPictureId(100), m_nextUserId(200)
+	m_dataAccess(dataAccess), m_nextPictureId(100)
 {
 	// Left empty
 	m_dataAccess.open();
@@ -198,7 +199,7 @@ void AlbumManager::listPicturesInAlbum()
 	for (auto iter = albumPictures.begin(); iter != albumPictures.end(); ++iter) {
 		std::cout << "   + Picture [" << iter->getId() << "] - " << iter->getName() << 
 			"\tLocation: [" << iter->getPath() << "]\tCreation Date: [" <<
-				iter->getCreationDate() << "]\tTags: [" << iter->getTagsCount() << "]" << std::endl;
+				iter->getCreationDate() << "]\tTags: [" << m_dataAccess.countTags(iter->getId()) << "]" << std::endl;
 	}
 	std::cout << std::endl;
 }
@@ -224,7 +225,7 @@ void AlbumManager::showPicture()
 	app = std::stoi(appStr);
 	if (app >= 1 && app <= 2)
 	{
-		openPaint(pic.getPath(), APPS(app));
+		openPictureInApp(pic.getPath(), APPS(app));
 	}
 	else
 	{
@@ -307,7 +308,7 @@ void AlbumManager::listUserTags()
 
 }
 
-void openPaint(std::string path, enum APPS app)
+void openPictureInApp(std::string path, enum APPS app)
 {
 	std::string appPath;
 	std::string picPath;
@@ -337,8 +338,31 @@ void openPaint(std::string path, enum APPS app)
 	BOOL success = RegisterHotKey(NULL, 1, MOD_CONTROL, 0x43);
 
 	MSG msg = { 0 };
-	if (GetMessage(&msg, NULL, 0, 0) != 0) {
-		
+	if (GetMessage(&msg, NULL, 0, 0) != 0)
+	{
+		// Find the application's main window
+		HWND appWindow = FindWindow(NULL, win.c_str());
+
+		// Set the application's window as the target of the keystrokes
+		SetForegroundWindow(appWindow);
+
+		// Simulate the user pressing Ctrl+S to save the picture
+		SendMessage(appWindow, WM_KEYDOWN, VK_CONTROL, 0);
+		SendMessage(appWindow, WM_KEYDOWN, 'S', 0);
+		SendMessage(appWindow, WM_KEYUP, 'S', 0);
+		SendMessage(appWindow, WM_KEYUP, VK_CONTROL, 0);
+
+		// Wait for the save dialog to appear
+		Sleep(1000);
+
+		// Simulate the user pressing Enter to save the picture
+		SendMessage(appWindow, WM_KEYDOWN, VK_RETURN, 0);
+		SendMessage(appWindow, WM_KEYUP, VK_RETURN, 0);
+
+		// Wait for the save operation to complete
+		Sleep(1000);
+
+		// Kill the process
 		killProcessByName(appPath.c_str());
 	}
 
@@ -374,11 +398,10 @@ void AlbumManager::addUser()
 {
 	std::string name = getInputFromConsole("Enter user name: ");
 
-	User user(++m_nextUserId,name);
-
 	try
 	{
-		m_dataAccess.createUser(user);
+		m_dataAccess.createUser(name);
+		User user(m_dataAccess.getUserId(name), name);
 		std::cout << "User " << name << " with id @" << user.getId() << " created successfully." << std::endl;
 	}
 	catch (const std::exception& e)
